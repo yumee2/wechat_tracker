@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'case-service'
+    static_configs:
+      - targets: ['case-service:8002']
+
+  - job_name: 'calc-service'
+    static_configs:
+      - targets: ['calc-service:8004']
