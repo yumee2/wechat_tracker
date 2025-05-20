@@ -1,0 +1,82 @@
+/* Стили для модального окна */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modalContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.fullscreenImage {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.closeButton {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+  padding: 5px 15px;
+}
+
+.modalNavButtons {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  padding: 0 20px;
+}
+
+.modalNavButton {
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.modalNavButton:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

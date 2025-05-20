@@ -1,0 +1,42 @@
+@font-face {
+  font-family: Inter;
+  src: url('/public/fonts/Inter_28pt-Medium.ttf');
+}
+
+@font-face {
+  font-family: InterLight;
+  src: url('/public/fonts/Inter_28pt-Light.ttf');
+}
+
+body {
+  margin: 0;
+  font-family: Inter, sans-serif;
+}
+
+.App {
+  font-family: Inter, sans-serif;
+}
+.baseIcon {
+  position: fixed;
+  bottom: 40px;
+  right: 22px;
+  background: transparent;
+  padding: 0;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.baseIcon img {
+  display: block;
+}
+
+
+@media screen and (max-width: 420px) {
+    .baseIcon img {
+      display: block;
+      width: 57px;
+      height: 57px;
+    }
+}

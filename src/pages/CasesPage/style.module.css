@@ -1,0 +1,22 @@
+
+.casesPage {
+  padding: 30px 20px;
+}
+
+.pageTitle {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+.cardsContainer {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+}
+
+@media (max-width: 400px) {
+  .cardsContainer {
+    grid-template-columns: 1fr;  
+  }
+}

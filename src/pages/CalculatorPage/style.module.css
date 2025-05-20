@@ -1,0 +1,187 @@
+/* src/pages/CalculatorPage.module.css */
+
+@font-face {
+  font-family: Inter;
+  src: url('/public/fonts/Inter_28pt-Medium.ttf');
+}
+
+.calculatorPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin-bottom: 291px;
+  font-family: Inter, san-serif;
+  position: relative;
+}
+
+.svgContainer {
+    width: 37px;
+    height: 37px;
+}
+
+.titleContainer {
+    display: flex;
+    align-items: center;
+    column-gap: 15px;
+}
+
+.title {
+    margin: 0;
+    font-size: 32px;
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 500px;
+  margin-top: 20px;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  column-gap: 20px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+
+.input[name="kg"] {
+  min-width: 65px;
+  max-width: 120px;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.input {
+  padding: 18px;
+  font-family: Inter, sans-serif;
+  outline: none;
+  border-radius: 16px;
+  border: 1px solid #000000;
+  color: black;
+  font-size: 20px;
+  width: 45%;
+  min-width: 235px;
+  box-sizing: border-box;
+}
+
+.input::placeholder {
+    color: #B3B3B3;
+}
+
+
+
+.select {
+  padding: 18px;
+  font-family: Inter, sans-serif;
+  width: 100%;
+  min-width: 260px;
+  outline: none;
+  border-radius: 16px;
+  border: 1px solid #000000;
+  color: black;
+  font-size: 20px;
+  box-sizing: border-box;
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M15.6629 20.3504C15.2968 20.7165 14.7032 20.7165 14.3371 20.3504L4.96209 10.9754C4.59597 10.6093 4.59597 10.0157 4.96209 9.64959C5.32821 9.28347 5.9218 9.28347 6.28791 9.64959L15 18.3617L23.7121 9.64959C24.0782 9.28347 24.6718 9.28347 25.0379 9.64959C25.404 10.0157 25.404 10.6093 25.0379 10.9754L15.6629 20.3504Z' fill='black'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 30px;
+}
+
+
+.select:optional {
+    color: #B3B3B3;
+}
+
+.selectUnit {
+  min-width: 110px;
+  width: 110px;
+  color: black;
+}
+
+.selectUnit:optional {
+    color: black;
+}
+
+.calculateButton {
+  padding: 18px;
+  font-size: 16px;
+  background-color: black;
+  color: white;
+  border: 1px solid black;
+  border-radius: 16px;
+  cursor: pointer;
+  width: 100%;
+  font-family: Inter, sans-serif;
+  font-weight: 500;
+}
+
+.calculateButton:hover {
+  background-color: #333;
+}
+
+.inputError {
+  border: 2px solid red !important;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.inputRow .inputError {
+  border-color: red;
+}
+
+.boxImage {
+  position: absolute;
+  right: 0px;
+  top: 140px;
+}
+
+@media screen and (max-width: 470px) {
+    .boxImage img {
+      width: 150px;
+      height: 250px;
+    }
+
+    .boxImage {
+      right: 0px;
+      top: 160px;
+    }
+}
+
+@media screen and (max-width: 430px) {
+    .boxImage {
+      display: none;
+    }
+    .title {
+      font-size: 28px;
+    }
+}
+
+@media screen and (max-width: 390px) {
+  .title {
+      font-size: 26px;
+  }
+}
+
+@media screen and (max-width: 350px) {
+    .select {
+        min-width: 230px;
+        padding-right: 45px;
+    }
+
+    .selectUnit {
+        min-width: 110px;
+        width: 110px;
+    }
+}
+

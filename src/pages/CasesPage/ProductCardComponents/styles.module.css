@@ -1,0 +1,176 @@
+.productPage {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  margin-right: 15px;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.imageContainer {
+  position: relative;
+  margin-bottom: 30px;
+  height: 250px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+
+.productImage {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  object-position: center;
+}
+
+.productImage.forward {
+  animation: slideForward 0.8s cubic-bezier(0.16, 0.77, 0.39, 0.97) both;
+}
+
+.productImage.backward {
+  animation: slideBackward 0.8s cubic-bezier(0.16, 0.77, 0.39, 0.97) both;
+}
+
+@keyframes slideForward {
+  0% {
+    opacity: 0;
+    transform: translateX(15px) scale(0.98);
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Анимация для перехода назад */
+@keyframes slideBackward {
+  0% {
+    opacity: 0;
+    transform: translateX(-15px) scale(0.98);
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+.navButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(234, 234, 234, 0.7);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prevButton {
+  left: 10px;
+}
+
+.nextButton {
+  right: 10px;
+}
+
+.priceDeliveryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 0 10px;
+}
+
+.priceContainer {
+  display: flex;
+  align-items: baseline;
+}
+
+.newPrice {
+  font-size: 32px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.oldPrice {
+  font-size: 13px;
+  color: red;
+  text-decoration: line-through;
+}
+
+.deliveryInfo {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.description {
+  margin-bottom: 30px;
+  font-weight: 700;
+  font-size: 20px;
+  color: #525252;
+}
+
+.contactButton {
+  width: 100%;
+  padding: 15px;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+@media (max-width: 410px) {
+  .newPrice {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 390px) {
+  .deliveryInfo {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .newPrice {
+    font-size: 24px;
+  }
+  .deliveryInfo {
+    font-size: 16px;
+  }
+}

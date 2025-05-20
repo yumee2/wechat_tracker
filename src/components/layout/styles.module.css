@@ -1,0 +1,16 @@
+
+.header {
+    margin-top: 63px;
+    padding-left: 20px;
+    overflow-x: auto;
+}
+
+.buttonGroup {
+    display: flex;
+    column-gap: 10px;
+    width: max-content;
+}
+
+.buttonGroup > button:last-child {
+  margin-right: 10px;
+}
