@@ -10,4 +10,5 @@ class Case(Base):
     description = Column(String, nullable=False)
     price_new = Column(Float, nullable=False)
     price_old = Column(Float, nullable=False)
-    image_url = Column(String)
+    image_urls = Column(ARRAY(String))
+    days = Column(Integer, nullable=True)

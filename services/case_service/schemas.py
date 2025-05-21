@@ -1,12 +1,14 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+
 
 class CaseBase(BaseModel):
     title: str
     description: str
     price_new: float
     price_old: float
-    image_url: Optional[str] = None
+    image_urls: List[str]
+    days: Optional[int]
 
 class CaseCreate(CaseBase):
     pass

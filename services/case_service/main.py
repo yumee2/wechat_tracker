@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Optional
+from typing import Optional, List
 from urllib.parse import urljoin
 
 from fastapi import FastAPI, Depends, Form, UploadFile, File, HTTPException
@@ -39,42 +39,43 @@ async def on_startup(db: AsyncSession = Depends(get_db)):
 
 
 @app.post("/case", response_model=CaseOut)
-async def create_case_with_image(
+async def create_case_with_images(
     request: Request,
     title: str = Form(...),
     description: str = Form(...),
     price_new: float = Form(...),
     price_old: float = Form(...),
-    image: UploadFile = File(...),
+    days: Optional[int] = Form(None),
+    images: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db)
 ):
-    safe_title = re.sub(r'[^\w\d_]', '_', title)
-    safe_filename = re.sub(r'[^\w\d_.]', '_', image.filename)
+    image_urls = []
 
-    filename = f"{safe_title}_{safe_filename}"
-    file_path = os.path.join("uploads", filename)
+    for image in images:
+        safe_title = re.sub(r'[^\w\d_]', '_', title)
+        safe_filename = re.sub(r'[^\w\d_.]', '_', image.filename)
+        filename = f"{safe_title}_{safe_filename}"
+        file_path = os.path.join("uploads", filename)
 
-    with open(file_path, "wb") as f:
-        f.write(await image.read())
+        with open(file_path, "wb") as f:
+            f.write(await image.read())
 
-    # Формируем URL
-    image_url = f"uploads/{filename}"
-    print(image_url)
+        image_url = f"uploads/{filename}".replace(" ", "_")
+        image_urls.append(image_url)
 
-    image_url = image_url.replace(" ", "_")
-    print(image_url)
-    # Создаем запись в БД
     new_case = Case(
         title=title,
         description=description,
         price_new=price_new,
         price_old=price_old,
-        image_url=image_url
+        image_urls=image_urls,
+        days=days
     )
     db.add(new_case)
     await db.commit()
     await db.refresh(new_case)
-    image_url = str(request.base_url) + new_case.image_url
+
+    full_urls = [str(request.base_url) + url for url in new_case.image_urls]
 
     return CaseOut(
         id=new_case.id,
@@ -82,7 +83,8 @@ async def create_case_with_image(
         description=new_case.description,
         price_new=new_case.price_new,
         price_old=new_case.price_old,
-        image_url=image_url
+        image_urls=full_urls,
+        days=new_case.days
     )
 @app.get("/cases")
 async def get_all_cases(request: Request, db: AsyncSession = Depends(get_db)):
@@ -90,25 +92,28 @@ async def get_all_cases(request: Request, db: AsyncSession = Depends(get_db)):
 
     result = await db.execute(select(Case))
     cases = result.scalars().all()
-    return [add_full_image_url(case, request) for case in cases]
+    return [add_full_image_urls(case, request) for case in cases]
+
 @app.get("/cases/{case_id}")
 async def get_case(case_id: int, request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Case).where(Case.id == case_id))
     case = result.scalar_one_or_none()
     if case:
         case_detail_views.labels(case_id=case_id).inc()
-        return add_full_image_url(case, request)
+        return [add_full_image_urls(case, request)]
+
     raise HTTPException(status_code=404, detail="Case not found")
-@app.put("/cases/{case_id}")
+@app.put("/cases/{case_id}", response_model=CaseOut)
 async def update_case(
-        case_id: int,
-        request: Request,
-        title: Optional[str] = Form(None),
-        description: Optional[str] = Form(None),
-        price_new: Optional[float] = Form(None),
-        price_old: Optional[float] = Form(None),
-        image: Optional[UploadFile] = File(None),
-        db: AsyncSession = Depends(get_db)
+    case_id: int,
+    request: Request,
+    title: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    price_new: Optional[float] = Form(None),
+    price_old: Optional[float] = Form(None),
+    days: Optional[int] = Form(None),
+    images: Optional[List[UploadFile]] = File(None),
+    db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Case).where(Case.id == case_id))
     case = result.scalars().first()
@@ -123,27 +128,37 @@ async def update_case(
         case.price_new = price_new
     if price_old is not None:
         case.price_old = price_old
+    if days is not None:
+        case.days = days
 
-    if image is not None:
-        if case.image_url:
-            old_file_path = os.path.join("uploads", os.path.basename(case.image_url))
-            if os.path.exists(old_file_path):
-                os.remove(old_file_path)
+    if images:
+        # Удаляем старые изображения
+        if case.image_urls:
+            for img_path in case.image_urls:
+                old_file_path = os.path.join("uploads", os.path.basename(img_path))
+                if os.path.exists(old_file_path):
+                    os.remove(old_file_path)
 
-        safe_title = re.sub(r'[^\w\d_]', '_', case.title)
-        safe_filename = re.sub(r'[^\w\d_.]', '_', image.filename)
-        filename = f"{safe_title}_{safe_filename}"
-        file_path = os.path.join("uploads", filename)
+        # Сохраняем новые изображения
+        new_image_urls = []
+        for image in images:
+            safe_title = re.sub(r'[^\w\d_]', '_', case.title)
+            safe_filename = re.sub(r'[^\w\d_.]', '_', image.filename)
+            filename = f"{safe_title}_{safe_filename}"
+            file_path = os.path.join("uploads", filename)
 
-        with open(file_path, "wb") as f:
-            f.write(await image.read())
+            with open(file_path, "wb") as f:
+                f.write(await image.read())
 
-        case.image_url = f"uploads/{filename}".replace(" ", "_")
+            image_url = f"uploads/{filename}".replace(" ", "_")
+            new_image_urls.append(image_url)
+
+        case.image_urls = new_image_urls
 
     await db.commit()
     await db.refresh(case)
 
-    image_url = str(request.base_url) + case.image_url if case.image_url else None
+    full_urls = [str(request.base_url) + url for url in case.image_urls] if case.image_urls else []
 
     return CaseOut(
         id=case.id,
@@ -151,8 +166,10 @@ async def update_case(
         description=case.description,
         price_new=case.price_new,
         price_old=case.price_old,
-        image_url=image_url
+        image_urls=full_urls,
+        days=case.days
     )
+
 @app.delete("/cases/{case_id}")
 async def delete_case(case_id: int, request: Request, db: AsyncSession = Depends(get_db)):
     db_case = await get_case(case_id, request, db=db)
@@ -162,7 +179,6 @@ async def delete_case(case_id: int, request: Request, db: AsyncSession = Depends
     await db.commit()
     return {"status": "deleted"}
 
-
-def add_full_image_url(case: Case, request: Request):
-    case.image_url = urljoin(str(request.base_url), case.image_url.lstrip("/"))
+def add_full_image_urls(case: Case, request: Request):
+    case.image_urls = [urljoin(str(request.base_url), img.lstrip("/")) for img in case.image_urls or []]
     return case
