@@ -38,7 +38,7 @@ async def get_usd_price() -> float:
                     if cols and cols[0] == "USD":
                         rate = float(cols[1]) / 100
                         print(f"💵 Найден курс USD: {rate}")
-                        return rate
+                        return  1 / rate
 
     print("❌ Не удалось найти курс USD.")
     return None  # или raise HTTPException(...)
