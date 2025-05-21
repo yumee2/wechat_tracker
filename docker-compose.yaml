@@ -1,3 +1,4 @@
+  GNU nano 6.2                                                                                                                                                                                                                                        docker-compose.yaml
 services:
   postgres-db:
     image: postgres:15
@@ -7,7 +8,7 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: user_service
     ports:
-      - "5432:5432"
+      - "5434:5432"
     networks:
       - my-network
     volumes:
@@ -30,8 +31,6 @@ services:
   redis:
     image: redis:7
     container_name: redis
-    ports:
-      - "6379:6379"
     networks:
       - my-network
 
@@ -49,7 +48,7 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3001:3000"
+      - "3007:3000"
     networks:
       - my-network
     depends_on:
@@ -59,7 +58,7 @@ services:
     build:
       context: ./services/gateway_service
     ports:
-      - "8000:8000"
+      - "8009:8000"
     depends_on:
       - user-service
       - case-service
@@ -74,8 +73,6 @@ services:
     container_name: users-service
     environment:
       DATABASE_URL: "postgresql+asyncpg://postgres:secret@postgres-db:5432/user_service"
-    ports:
-      - "8001:8001"
     depends_on:
       - postgres-db
     networks:
@@ -90,7 +87,7 @@ services:
     environment:
       DATABASE_URL: "postgresql+asyncpg://postgres:secret_2@postgres-db-2:5432/case_service"
     ports:
-      - "8002:8002"
+      - "8006:8002"
     depends_on:
       - postgres-db-2
     networks:
@@ -129,3 +126,6 @@ networks:
 volumes:
   postgres-data:
     driver: local
+
+
+
