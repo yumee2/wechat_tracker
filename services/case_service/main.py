@@ -1,3 +1,4 @@
+import hashlib
 import os
 import re
 from typing import Optional, List
@@ -10,7 +11,7 @@ from sqlalchemy import select
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
-from starlette.staticfiles import StaticFiles
+from custom_static import CustomStaticFiles
 
 from database import init_db, get_db
 from models import Case
@@ -30,8 +31,7 @@ case_detail_views = Counter(
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
+app.mount("/uploads", CustomStaticFiles(directory="uploads"), name="uploads")
 
 @app.on_event("startup")
 async def on_startup(db: AsyncSession = Depends(get_db)):
@@ -52,15 +52,7 @@ async def create_case_with_images(
     image_urls = []
 
     for image in images:
-        safe_title = re.sub(r'[^\w\d_]', '_', title)
-        safe_filename = re.sub(r'[^\w\d_.]', '_', image.filename)
-        filename = f"{safe_title}_{safe_filename}"
-        file_path = os.path.join("uploads", filename)
-
-        with open(file_path, "wb") as f:
-            f.write(await image.read())
-
-        image_url = f"uploads/{filename}".replace(" ", "_")
+        image_url = await save_image(image, title)
         image_urls.append(image_url)
 
     new_case = Case(
@@ -142,15 +134,7 @@ async def update_case(
         # Сохраняем новые изображения
         new_image_urls = []
         for image in images:
-            safe_title = re.sub(r'[^\w\d_]', '_', case.title)
-            safe_filename = re.sub(r'[^\w\d_.]', '_', image.filename)
-            filename = f"{safe_title}_{safe_filename}"
-            file_path = os.path.join("uploads", filename)
-
-            with open(file_path, "wb") as f:
-                f.write(await image.read())
-
-            image_url = f"uploads/{filename}".replace(" ", "_")
+            image_url = await save_image(image, title)
             new_image_urls.append(image_url)
 
         case.image_urls = new_image_urls
@@ -182,3 +166,18 @@ async def delete_case(case_id: int, request: Request, db: AsyncSession = Depends
 def add_full_image_urls(case: Case, request: Request):
     case.image_urls = [urljoin(str(request.base_url), img.lstrip("/")) for img in case.image_urls or []]
     return case
+
+async def save_image(image: UploadFile, title: str) -> str:
+    content = await image.read()
+    await image.seek(0)  # не забудь сбросить указатель, если файл потом сохраняется
+
+    hash = hashlib.md5(content).hexdigest()[:8]  # короткий хеш
+    ext = os.path.splitext(image.filename)[-1]
+    safe_title = re.sub(r"[^\w\d_]", "_", title)
+    filename = f"{safe_title}_{hash}{ext}"
+    file_path = os.path.join("uploads", filename)
+
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    return f"uploads/{filename}"

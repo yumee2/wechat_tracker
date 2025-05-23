@@ -57,7 +57,11 @@ async def create_case_with_image(
 async def delete_case(case_id: int):
     async with httpx.AsyncClient() as client:
         resp = await client.delete(f"{CASE_SERVICE_URL}/cases/{case_id}")
-    return JSONResponse(content=resp.json(), status_code=resp.status_code)
+    if resp.content:
+        return JSONResponse(content=resp.json(), status_code=resp.status_code)
+    else:
+        return JSONResponse(content={"message": "Deleted"}, status_code=resp.status_code)
+
 
 @router.put("/{case_id}", summary="Update case")
 async def update_case(
