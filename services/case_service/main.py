@@ -33,6 +33,9 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", CustomStaticFiles(directory="uploads"), name="uploads")
 
+IMAGE_HOST = "http://89.23.116.157:8006"
+
+
 @app.on_event("startup")
 async def on_startup(db: AsyncSession = Depends(get_db)):
     await init_db()
@@ -67,7 +70,7 @@ async def create_case_with_images(
     await db.commit()
     await db.refresh(new_case)
 
-    full_urls = [str(request.base_url) + url for url in new_case.image_urls]
+    full_urls = [build_image_url(url.split("/")[-1]) for url in new_case.image_urls]  # берём только имя файла
 
     return CaseOut(
         id=new_case.id,
@@ -142,7 +145,7 @@ async def update_case(
     await db.commit()
     await db.refresh(case)
 
-    full_urls = [str(request.base_url) + url for url in case.image_urls] if case.image_urls else []
+    full_urls = [build_image_url(url.split("/")[-1]) for url in case.image_urls] if case.image_urls else []
 
     return CaseOut(
         id=case.id,
@@ -181,3 +184,6 @@ async def save_image(image: UploadFile, title: str) -> str:
         f.write(content)
 
     return f"uploads/{filename}"
+
+def build_image_url(filename: str) -> str:
+    return f"{IMAGE_HOST}/uploads/{filename}"
