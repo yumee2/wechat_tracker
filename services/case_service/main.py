@@ -87,6 +87,7 @@ async def get_all_cases(request: Request, db: AsyncSession = Depends(get_db)):
 
     result = await db.execute(select(Case))
     cases = result.scalars().all()
+
     return [add_full_image_urls(case, request) for case in cases]
 
 @app.get("/cases/{case_id}")
@@ -167,7 +168,7 @@ async def delete_case(case_id: int, request: Request, db: AsyncSession = Depends
     return {"status": "deleted"}
 
 def add_full_image_urls(case: Case, request: Request):
-    case.image_urls = [urljoin(str(request.base_url), img.lstrip("/")) for img in case.image_urls or []]
+    case.image_urls = [build_image_url(url.split("/")[-1]) for url in case.image_urls]
     return case
 
 async def save_image(image: UploadFile, title: str) -> str:
