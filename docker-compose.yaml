@@ -86,13 +86,14 @@ services:
     environment:
       DATABASE_URL: "postgresql+asyncpg://postgres:secret_2@postgres-db-2:5432/case_service"
     ports:
-      - "8006:8002"
+      - "8006:8006"
     depends_on:
       - postgres-db-2
     networks:
       - my-network
     volumes:
       - ./services/case_service:/app
+      - ./uploads:/app/uploads
 
   currency-service:
     build:

@@ -3,7 +3,7 @@ from typing import Optional, List
 from fastapi.responses import JSONResponse
 import httpx
 
-CASE_SERVICE_URL = "http://case-service:8002"
+CASE_SERVICE_URL = "http://case-service:8006"
 
 router = APIRouter()
 

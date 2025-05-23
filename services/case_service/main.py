@@ -92,7 +92,7 @@ async def get_case(case_id: int, request: Request, db: AsyncSession = Depends(ge
     case = result.scalar_one_or_none()
     if case:
         case_detail_views.labels(case_id=case_id).inc()
-        return [add_full_image_urls(case, request)]
+        return add_full_image_urls(case, request)
 
     raise HTTPException(status_code=404, detail="Case not found")
 @app.put("/cases/{case_id}", response_model=CaseOut)
