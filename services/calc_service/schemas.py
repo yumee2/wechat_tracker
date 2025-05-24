@@ -9,6 +9,7 @@ class CalcResponse(BaseModel):
     density: float
     price_per_kgm3: float
     total_price: float
+    cargo_type: str
 
 class PriceRow(BaseModel):
     min: float

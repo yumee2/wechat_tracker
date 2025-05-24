@@ -47,4 +47,4 @@ def calculate_price(data: CalcRequest):
     calc_requests_by_type.labels(cargo_type=data.cargo_type.lower()).inc()
     calc_density_summary.observe(density)
     calc_total_price_summary.observe(total_price)
-    return CalcResponse(density=round(density, 2), price_per_kgm3=price_per_kgm3, total_price=total_price)
+    return CalcResponse(density=round(density, 2), price_per_kgm3=price_per_kgm3, total_price=total_price, cargo_type=data.cargo_type)
