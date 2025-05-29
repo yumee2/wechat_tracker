@@ -7,7 +7,7 @@ CASE_SERVICE_URL = "http://case-service:8006"
 
 router = APIRouter()
 
-@router.get("/", summary="Get all cases")
+@router.get("", summary="Get all cases")
 async def get_all_cases():
     async with httpx.AsyncClient() as client:
         resp = await client.get(f"{CASE_SERVICE_URL}/cases")
@@ -19,7 +19,7 @@ async def get_case(case_id: int):
         resp = await client.get(f"{CASE_SERVICE_URL}/cases/{case_id}")
     return JSONResponse(content=resp.json(), status_code=resp.status_code)
 
-@router.post("/", summary="Create case")
+@router.post("", summary="Create case")
 async def create_case_with_image(
     title: str = Form(...),
     description: str = Form(...),
