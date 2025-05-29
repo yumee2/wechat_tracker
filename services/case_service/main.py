@@ -33,7 +33,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", CustomStaticFiles(directory="uploads"), name="uploads")
 
-IMAGE_HOST = "http://89.23.116.157:8006"
+IMAGE_HOST = "http://cargo.nilit1.ru"
 
 
 @app.on_event("startup")
