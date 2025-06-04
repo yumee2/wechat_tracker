@@ -62,6 +62,7 @@ async def get_order_info(order_no: str, user_id: str, db: AsyncSession = Depends
             state_5 = None
             state_6 = None
 
+
             if len(tracker.get("tracking")) == 1:
                 state_1 = tracker.get("tracking")[0].get("details")
             if len(tracker.get("tracking")) == 2:
@@ -100,7 +101,7 @@ async def get_order_info(order_no: str, user_id: str, db: AsyncSession = Depends
                 state_5=state_5,
                 state_6=state_6,
             )
-
+            print(new_tracker)
             db.add(new_tracker)
             await db.commit()
             return {"state": new_tracker.most_recent_state()}
