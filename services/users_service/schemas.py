@@ -11,3 +11,4 @@ class UserResponse(BaseModel):
     username: str
     first_name: str
     is_admin: bool
+

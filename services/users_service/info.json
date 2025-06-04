@@ -1,0 +1,28 @@
+{
+    "info": {
+        "order_no": "ADU5052411-1",
+        "tracking_details": {
+            "delivery_way": "Куруру",
+            "destination": "Москва 19 км",
+            "weight": "16.2kg",
+            "volume": "0.11m³",
+            "issuance_date": "2025-05-25",
+            "arrival_date": "",
+            "cargo_status": "Не исходящий",
+            "status_details": "Прибыл в порт отправления и декларирует таможню"
+        },
+        "tracking": [
+            {
+                "date": "2025-05-29",
+                "description": "已到出境口岸正在报关",
+                "details": "Уже прибыла в выездной порт, в настоящее время проходит таможенненное оформление"
+            },
+            {
+                "date": "2025-05-25",
+                "description": "已装车发往出境口岸",
+                "details": "Уже загруженная машина отправлена в выездной порт"
+            }
+        ]
+    },
+    "status": "success"
+}

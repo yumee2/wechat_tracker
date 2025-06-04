@@ -5,7 +5,7 @@ from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from models import User
+from models import User, Tracker
 
 load_dotenv()
 
@@ -31,3 +31,6 @@ def create_tables(conn):
 
     if not inspector.has_table('users'):
         User.__table__.create(conn)
+
+    if not inspector.has_table('trackers'):
+        Tracker.__table__.create(conn)
