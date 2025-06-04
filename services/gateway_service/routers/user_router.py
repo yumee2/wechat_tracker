@@ -25,3 +25,9 @@ async def get_currency(telegram_id: str):
     async with httpx.AsyncClient() as client:
         resp = await client.get(f"{USER_SERVICE_URL}/auth/me/{telegram_id}")
     return JSONResponse(content=resp.json(), status_code=resp.status_code)
+
+@router.get("/{user_id}/order/{order_no}")
+async def get_order_info(order_no: str, user_id: str):
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(f"{USER_SERVICE_URL}/{user_id}/order/{order_no}")
+    return JSONResponse(content=resp.json(), status_code=resp.status_code)
