@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -18,24 +18,18 @@ class Tracker(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, ForeignKey('users.telegram_id'), nullable=False, unique=True)
     tracking_code = Column(String, nullable=False, unique=True)
-    state_1 = Column(String, nullable=True)
-    state_2 = Column(String, nullable=True)
-    state_3 = Column(String, nullable=True)
-    state_4 = Column(String, nullable=True)
-    state_5 = Column(String, nullable=True)
-    state_6 = Column(String, nullable=True)
+    state_1 = Column(JSON, nullable=True)
+    state_2 = Column(JSON, nullable=True)
+    state_3 = Column(JSON, nullable=True)
+    state_4 = Column(JSON, nullable=True)
+    state_5 = Column(JSON, nullable=True)
+    state_6 = Column(JSON, nullable=True)
 
-    def most_recent_state(self) -> str | None:
-        for state in reversed([
-            self.state_1,
-            self.state_2,
-            self.state_3,
-            self.state_4,
-            self.state_5,
-            self.state_6,
-        ]):
-            if state is not None:
+    def most_recent_state(self):
+        for state in [self.state_6, self.state_5, self.state_4, self.state_3, self.state_2, self.state_1]:
+            if state:
                 return state
         return None
 
     users = relationship("User", back_populates="trackers")
+

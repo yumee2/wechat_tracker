@@ -51,63 +51,57 @@ async def get_order_info(order_no: str, user_id: str, db: AsyncSession = Depends
     if tracker is None:
         response = requests.post("http://147.45.147.92:1241/track", json={"track": order_no})
         print(response.json())
+
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail=response.text)
-        else:
-            tracker = response.json().get("info")
-            state_1 = None
-            state_2 = None
-            state_3 = None
-            state_4 = None
-            state_5 = None
-            state_6 = None
 
+        tracker_info = response.json().get("info")
+        tracking_events = tracker_info.get("tracking", [])
 
-            if len(tracker.get("tracking")) == 1:
-                state_1 = tracker.get("tracking")[0].get("details")
-            if len(tracker.get("tracking")) == 2:
-                state_1 = tracker.get("tracking")[1].get("details")
-                state_2 = tracker.get("tracking")[0].get("details")
-            if len(tracker.get("tracking")) == 3:
-                state_1 = tracker.get("tracking")[2].get("details")
-                state_2 = tracker.get("tracking")[1].get("details")
-                state_3 = tracker.get("tracking")[0].get("details")
-            if len(tracker.get("tracking")) == 4:
-                state_1 = tracker.get("tracking")[3].get("details")
-                state_2 = tracker.get("tracking")[2].get("details")
-                state_3 = tracker.get("tracking")[1].get("details")
-                state_4 = tracker.get("tracking")[0].get("details")
-            if len(tracker.get("tracking")) == 5:
-                state_1 = tracker.get("tracking")[4].get("details")
-                state_2 = tracker.get("tracking")[3].get("details")
-                state_3 = tracker.get("tracking")[2].get("details")
-                state_4 = tracker.get("tracking")[1].get("details")
-                state_5 = tracker.get("tracking")[0].get("details")
-            if len(tracker.get("tracking")) == 6:
-                state_1 = tracker.get("tracking")[5].get("details")
-                state_2 = tracker.get("tracking")[4].get("details")
-                state_3 = tracker.get("tracking")[3].get("details")
-                state_4 = tracker.get("tracking")[2].get("details")
-                state_5 = tracker.get("tracking")[1].get("details")
-                state_6 = tracker.get("tracking")[0].get("details")
+        # Build state list from latest to oldest, up to 6 entries
+        states = []
+        for event in reversed(tracking_events[:6]):
+            states.append({
+                "details": event.get("details"),
+                "date": event.get("date")
+            })
 
-            new_tracker = Tracker(
-                tracking_code=order_no,
-                user_id=user_id,
-                state_1=state_1,
-                state_2=state_2,
-                state_3=state_3,
-                state_4=state_4,
-                state_5=state_5,
-                state_6=state_6,
-            )
-            print(new_tracker)
-            db.add(new_tracker)
-            await db.commit()
-            return {"state": new_tracker.most_recent_state()}
+        # Pad with None if fewer than 6 states
+        while len(states) < 6:
+            states.append(None)
+
+        new_tracker = Tracker(
+            tracking_code=order_no,
+            user_id=user_id,
+            state_1=states[0],
+            state_2=states[1],
+            state_3=states[2],
+            state_4=states[3],
+            state_5=states[4],
+            state_6=states[5],
+        )
+
+        db.add(new_tracker)
+        await db.commit()
+
+        return {
+            "state_1": new_tracker.state_1,
+            "state_2": new_tracker.state_2,
+            "state_3": new_tracker.state_3,
+            "state_4": new_tracker.state_4,
+            "state_5": new_tracker.state_5,
+            "state_6": new_tracker.state_6,
+        }
 
     else:
-        return {"state": tracker.most_recent_state()}
+        return {
+            "state_1": tracker.state_1,
+            "state_2": tracker.state_2,
+            "state_3": tracker.state_3,
+            "state_4": tracker.state_4,
+            "state_5": tracker.state_5,
+            "state_6": tracker.state_6,
+        }
 
 @app.get("/auth/me/{telegram_id}", response_model=UserResponse)
 async def get_user(telegram_id: str, db: AsyncSession = Depends(get_db)):
