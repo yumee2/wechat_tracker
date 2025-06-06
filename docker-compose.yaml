@@ -123,41 +123,6 @@ services:
     volumes:
       - ./services/calc_service:/app
 
-
-  worker:
-    build:
-      context: ./services/users_service  # или путь к корню с celery_app.py
-    container_name: celery-worker
-    command: celery -A services.users_service.celery_app.celery worker --loglevel=info
-    environment:
-      # Пробрасываем переменные для доступа к Redis и БД
-      DATABASE_URL: "postgresql+asyncpg://postgres:secret@postgres-db:5432/user_service"
-      REDIS_URL: "redis://redis:6379/0"
-    volumes:
-      - .:/app
-    depends_on:
-      - redis
-      - postgres-db
-    networks:
-      - my-network
-
-    # === Celery beat (планировщик) ===
-  beat:
-    build:
-      context: ./services/users_service
-    container_name: celery-beat
-    command: celery -A services.users_service.celery_app.celery beat --loglevel=info
-    environment:
-      DATABASE_URL: "postgresql+asyncpg://postgres:secret@postgres-db:5432/user_service"
-      REDIS_URL: "redis://redis:6379/0"
-    volumes:
-      - .:/app
-    depends_on:
-      - redis
-      - postgres-db
-    networks:
-      - my-network
-
 networks:
   my-network:
     driver: bridge
