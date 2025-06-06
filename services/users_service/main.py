@@ -1,17 +1,115 @@
+import os
+
+import aiohttp
+from aiohttp import ClientSession
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, or_, String, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import init_db, get_db
+from database import init_db, get_db, async_session
 from models import User, Tracker
 from schemas import UserCreate, UserResponse
 import requests
 app = FastAPI()
+scheduler = AsyncIOScheduler()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+
+
+async def send_telegram_message(chat_id: str, message: str):
+    async with ClientSession() as session:
+        await session.post(
+            TELEGRAM_API_URL,
+            json={"chat_id": chat_id, "text": message}
+        )
+
+async def update_null_trackers():
+    async with async_session() as db:
+        stmt = select(Tracker).where(
+            or_(
+                Tracker.state_6 == None,  # SQL NULL
+                Tracker.state_6.cast(String) == text("'null'")  # JSON null (as text)
+            )
+        )
+        result = await db.execute(stmt)
+        trackers = result.scalars().all()
+        print(f"🔍 Найдено трекеров для обновления: {len(trackers)}")
+
+        async with ClientSession() as http_session:
+            for tracker in trackers:
+                try:
+                    async with http_session.post(
+                        "http://147.45.147.92:1241/track",
+                        json={"track": tracker.tracking_code}
+                    ) as response:
+
+                        if response.status != 200:
+                            print(f"❌ Failed to fetch for {tracker.tracking_code}")
+                            continue
+
+                        data = await response.json()
+                        info = data.get("info", {})
+                        tracking_events = info.get("tracking", [])
+                        print(tracking_events)
+                        # сохранить старые состояния
+                        old_states = [
+                            tracker.state_1,
+                            tracker.state_2,
+                            tracker.state_3,
+                            tracker.state_4,
+                            tracker.state_5,
+                            tracker.state_6,
+                        ]
+
+                        # собрать новые состояния (до 6)
+                        new_states = []
+                        for event in reversed(tracking_events[:6]):
+                            new_states.append({
+                                "details": event.get("details"),
+                                "date": event.get("date")
+                            })
+
+                        while len(new_states) < 6:
+                            new_states.append(None)
+
+                        # обновить трекер
+                        tracker.state_1 = new_states[0]
+                        tracker.state_2 = new_states[1]
+                        tracker.state_3 = new_states[2]
+                        tracker.state_4 = new_states[3]
+                        tracker.state_5 = new_states[4]
+                        tracker.state_6 = new_states[5]
+
+                        # найти обновлённые поля
+                        updated_fields = []
+                        for i, (old, new) in enumerate(zip(old_states, new_states), start=1):
+                            if old is None and new is not None:
+                                updated_fields.append(
+                                    f"🆕 state_{i}: {new['details']} ({new['date']})"
+                                )
+
+                        # отправить уведомление
+                        if updated_fields and tracker.telegram_chat_id:
+                            message = f"📦 Обновление по треку {tracker.tracking_code}:\n" + "\n".join(updated_fields)
+                            await send_telegram_message(tracker.telegram_chat_id, message)
+
+                except Exception as e:
+                    print(f"❌ Error with {tracker.tracking_code}: {e}")
+
+            await db.commit()
+        print("✅ Трекеры с пустыми состояниями обновлены.")
 
 @app.on_event("startup")
 async def on_startup():
     await init_db()
+    scheduler.add_job(update_null_trackers, "interval", hours=3, misfire_grace_time=1800)
+    scheduler.start()
 
+@app.on_event("shutdown")
+async def shutdown():
+    scheduler.shutdown()
 
 @app.post("/auth/verify", response_model=UserResponse)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
