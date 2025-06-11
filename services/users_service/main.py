@@ -67,9 +67,10 @@ async def update_null_trackers():
 
                         # собрать новые состояния (до 6)
                         new_states = []
-                        for event in reversed(tracking_events[:6]):
+                        for i, event in enumerate(reversed(tracking_events[:6])):
+                            state_key = f"state_{i + 1}"
                             new_states.append({
-                                "details": event.get("details"),
+                                "details": STATE_DETAILS.get(state_key),
                                 "date": event.get("date")
                             })
 
