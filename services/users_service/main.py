@@ -106,7 +106,7 @@ async def update_null_trackers():
 @app.on_event("startup")
 async def on_startup():
     await init_db()
-    scheduler.add_job(update_null_trackers, "interval", hours=3, misfire_grace_time=1800)
+    scheduler.add_job(update_null_trackers, "interval", hours=1, misfire_grace_time=1800)
     scheduler.start()
 
 @app.on_event("shutdown")
