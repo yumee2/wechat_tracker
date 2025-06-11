@@ -1,6 +1,5 @@
 import os
 
-import aiohttp
 from aiohttp import ClientSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Depends, HTTPException
@@ -11,6 +10,9 @@ from database import init_db, get_db, async_session
 from models import User, Tracker
 from schemas import UserCreate, UserResponse
 import requests
+
+from state_config import STATE_DETAILS
+
 app = FastAPI()
 scheduler = AsyncIOScheduler()
 
@@ -158,9 +160,10 @@ async def get_order_info(order_no: str, user_id: str, db: AsyncSession = Depends
 
         # Build state list from latest to oldest, up to 6 entries
         states = []
-        for event in reversed(tracking_events[:6]):
+        for i, event in enumerate(reversed(tracking_events[:6])):
+            state_key = f"state_{i + 1}"
             states.append({
-                "details": event.get("details"),
+                "details": STATE_DETAILS.get(state_key),
                 "date": event.get("date")
             })
 
