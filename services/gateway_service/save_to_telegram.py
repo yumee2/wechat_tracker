@@ -7,17 +7,28 @@ def send_message_to_telegram(order_info):
     bot_token = BOT_ID
     chat_id = CHAT_ID
     density = str(order_info["density"]).replace('.', '\.')
-    yuan_rub = str(order_info["yuan_rub"]).replace('.', '\.')
-    yuan_usd = str(order_info["yuan_usd"]).replace('.', '\.')
+    weight = str(order_info["weight"]).replace('.', '\.')
     total_price = str(order_info["total_price"]).replace('.', '\.')
-    message = f"Новый заказ:\n\nПользователь: [{order_info['user_name']}]({order_info['user_link']})\nПлотность: {density}\nКурс юань/рубль: {yuan_rub}\nКурс юань/доллар: {yuan_usd}\nТип товара: {order_info['cargo_type']}\nСтоимость: {total_price}"
-    print(message)
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    print(url)
-    payload = {
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "MarkdownV2"
-    }
+    if order_info["boxes_amount"] != None:
+        message = f"Новый заказ:\n\nПользователь: [{order_info['user_name']}]({order_info['user_link']})\nПлотность: {density}\nТип товара: {order_info['cargo_type']}\nКоличество коробок: {order_info['boxes_amount']}\nВес: {weight}\nСтоимость кг\м3 : {total_price}"
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        print(url)
+        print(message)
+        payload = {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "MarkdownV2"
+        }
 
-    response = requests.post(url, json=payload)
+        response = requests.post(url, json=payload)
+    else:
+        message = f"Новый заказ:\n\nПользователь: [{order_info['user_name']}]({order_info['user_link']})\nПлотность: {density}\nТип товара: {order_info['cargo_type']}\nСтоимость кг\м3 : {total_price}"
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        print(url)
+        payload = {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "MarkdownV2"
+        }
+        print(message)
+        response = requests.post(url, json=payload)

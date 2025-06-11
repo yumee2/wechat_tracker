@@ -29,7 +29,7 @@ def get_price_table():
         "other": other_price_table,
     }
 
-@app.post("/calculate", response_model=CalcResponse)
+@app.post("/calculate")
 def calculate_price(data: CalcRequest):
     density = data.weight / data.volume if data.volume else 0
     table = household_price_table if data.cargo_type.lower() == "household" else other_price_table
@@ -47,4 +47,4 @@ def calculate_price(data: CalcRequest):
     calc_requests_by_type.labels(cargo_type=data.cargo_type.lower()).inc()
     calc_density_summary.observe(density)
     calc_total_price_summary.observe(total_price)
-    return CalcResponse(density=round(density, 2), price_per_kgm3=price_per_kgm3, total_price=total_price, cargo_type=data.cargo_type)
+    return price_per_kgm3
