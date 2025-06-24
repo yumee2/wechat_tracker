@@ -3,14 +3,14 @@ from bs4 import BeautifulSoup
 
 '''Парсинг CNY/RUB с сайта Мосбиржи'''
 async def get_cny_price():
-    url = "https://iss.moex.com/iss/engines/currency/markets/index/securities/CNYFIX/marketdata.json"
+    url = "https://iss.moex.com/iss/engines/currency/markets/selt/boards/CETS/securities/CNYRUB_TOM.json?iss.meta=off&marketdata.columns=LAST"
 
     response = requests.get(url)
     moex_data = response.json()
     cny_data = moex_data["marketdata"]["data"][0]
 
     if len(cny_data) > 0:
-        cny_price = cny_data[4]
+        cny_price = cny_data[0]
         print(f"CNY/RUB exchange rate: {cny_price}")
         return cny_price
     else:

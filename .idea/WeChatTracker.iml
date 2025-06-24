@@ -6,7 +6,7 @@
       <excludeFolder url="file://$MODULE_DIR$/services/gateway_service/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/services/currency_service/.venv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.13 (WeChatTracker)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.13 (wechat_tracker)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
