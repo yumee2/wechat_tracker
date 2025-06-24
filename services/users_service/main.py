@@ -18,6 +18,10 @@ scheduler = AsyncIOScheduler()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+MAX_RETRIES = 5
+INITIAL_DELAY = 1  # seconds
+EXTERNAL_TIMEOUT = 10  # seconds
+
 
 
 async def send_telegram_message(chat_id: str, message: str):
@@ -143,82 +147,74 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     )
 
 @app.get("/{user_id}/order/{order_no}")
-async def get_order_info(order_no: str, user_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Tracker).where(Tracker.tracking_code == order_no)
-    )
+async def get_order_info(
+        order_no: str,
+        user_id: str,
+        db: AsyncSession = Depends(get_db)
+):
+    # Check database first
+    result = await db.execute(select(Tracker).where(Tracker.tracking_code == order_no))
     tracker = result.scalar_one_or_none()
 
-    if tracker is None:
-        response = requests.post("http://147.45.147.92:1241/track", json={"track": order_no})
-        print(response.json())
+    if tracker:
+        return {f"state_{i}": getattr(tracker, f"state_{i}") for i in range(1, 7)}
 
-        if response.status_code != 200:
-            raise HTTPException(status_code=400, detail=response.text)
+    # External service request with retries
+    async with httpx.AsyncClient(timeout=EXTERNAL_TIMEOUT) as client:
+        delay = INITIAL_DELAY
+        for attempt in range(MAX_RETRIES):
+            try:
+                response = await client.post(
+                    "http://147.45.147.92:1241/track",
+                    json={"track": order_no}
+                )
+                response.raise_for_status()
+                data = response.json()
 
-        tracker_info = response.json().get("info")
-        tracking_events = tracker_info.get("tracking", [])
+                # Check if expected data is present
+                if "info" in data and "tracking" in data["info"]:
+                    tracker_info = data["info"]
+                    break
 
-        # Build state list from latest to oldest, up to 6 entries
-        states = []
-        for i, event in enumerate(reversed(tracking_events[:6])):
-            state_key = f"state_{i + 1}"
-            states.append({
-                "details": STATE_DETAILS.get(state_key),
-                "date": event.get("date")
-            })
+            except (httpx.RequestError, httpx.HTTPStatusError) as e:
+                last_error = e
+                if attempt == MAX_RETRIES - 1:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"External service error: {str(e)}"
+                    )
 
-        # Pad with None if fewer than 6 states
-        while len(states) < 6:
-            states.append(None)
+            # Exponential backoff before retry
+            await asyncio.sleep(delay)
+            delay *= 2
+        else:
+            raise HTTPException(
+                status_code=504,
+                detail="External service didn't return valid data after retries"
+            )
 
-        new_tracker = Tracker(
-            tracking_code=order_no,
-            user_id=user_id,
-            state_1=states[0],
-            state_2=states[1],
-            state_3=states[2],
-            state_4=states[3],
-            state_5=states[4],
-            state_6=states[5],
-        )
+    # Process tracking events
+    tracking_events = tracker_info.get("tracking", [])[::-1][:6]  # Latest first
+    states = []
 
-        db.add(new_tracker)
-        await db.commit()
+    for i, event in enumerate(tracking_events):
+        states.append({
+            "details": STATE_DETAILS.get(f"state_{i + 1}"),
+            "date": event.get("date")
+        })
 
-        return {
-            "state_1": new_tracker.state_1,
-            "state_2": new_tracker.state_2,
-            "state_3": new_tracker.state_3,
-            "state_4": new_tracker.state_4,
-            "state_5": new_tracker.state_5,
-            "state_6": new_tracker.state_6,
-        }
+    # Pad remaining states
+    states.extend([None] * (6 - len(states)))
 
-    else:
-        return {
-            "state_1": tracker.state_1,
-            "state_2": tracker.state_2,
-            "state_3": tracker.state_3,
-            "state_4": tracker.state_4,
-            "state_5": tracker.state_5,
-            "state_6": tracker.state_6,
-        }
-
-@app.get("/auth/me/{telegram_id}", response_model=UserResponse)
-async def get_user(telegram_id: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(User).where(User.telegram_id == telegram_id)
+    # Create and save new tracker
+    new_tracker = Tracker(
+        tracking_code=order_no,
+        user_id=user_id,
+        **{f"state_{i + 1}": state for i, state in enumerate(states)}
     )
-    existing_user = result.scalar_one_or_none()
 
-    if existing_user is None:
-        raise HTTPException(status_code=404, detail="user not found")
-    else:
-        return UserResponse(
-            id=existing_user.id,
-            telegram_id=existing_user.telegram_id,
-            username=existing_user.username,
-            first_name=existing_user.first_name,
-            is_admin=existing_user.is_admin,
-        )
+    db.add(new_tracker)
+    await db.commit()
+    await db.refresh(new_tracker)
+
+    return {f"state_{i}": getattr(new_tracker, f"state_{i}") for i in range(1, 7)}
