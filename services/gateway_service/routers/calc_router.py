@@ -1,9 +1,7 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
-from routers.currency_router import get_currency
 import httpx
-import json
 
 from save_to_telegram import send_message_to_telegram
 

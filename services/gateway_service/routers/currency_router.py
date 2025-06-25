@@ -24,4 +24,3 @@ async def update_multipliers(payload: dict = Body(...)):
     async with httpx.AsyncClient() as client:
         resp = await client.post(f"{CURRENCY_SERVICE_URL}/multipliers", json=payload)
     return JSONResponse(content=resp.json(), status_code=resp.status_code)
-x

@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from routers.calc_router import router as calc_router
-from  routers.case_router import router as case_router
-from  routers.currency_router import router as currency_router
-from  routers.user_router import router as user_router
+from routers.case_router import router as case_router
+from routers.currency_router import router as currency_router
+from routers.user_router import router as user_router
 
 
 app = FastAPI(
