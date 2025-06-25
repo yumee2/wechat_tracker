@@ -147,74 +147,64 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     )
 
 @app.get("/{user_id}/order/{order_no}")
-async def get_order_info(
-        order_no: str,
-        user_id: str,
-        db: AsyncSession = Depends(get_db)
-):
-    # Check database first
-    result = await db.execute(select(Tracker).where(Tracker.tracking_code == order_no))
+async def get_order_info(order_no: str, user_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Tracker).where(Tracker.tracking_code == order_no)
+    )
     tracker = result.scalar_one_or_none()
 
-    if tracker:
-        return {f"state_{i}": getattr(tracker, f"state_{i}") for i in range(1, 7)}
+    if tracker is None:
+        response = requests.post("http://147.45.147.92:1241/track", json={"track": order_no})
+        print(response.json())
 
-    # External service request with retries
-    async with httpx.AsyncClient(timeout=EXTERNAL_TIMEOUT) as client:
-        delay = INITIAL_DELAY
-        for attempt in range(MAX_RETRIES):
-            try:
-                response = await client.post(
-                    "http://147.45.147.92:1241/track",
-                    json={"track": order_no}
-                )
-                response.raise_for_status()
-                data = response.json()
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail=response.text)
 
-                # Check if expected data is present
-                if "info" in data and "tracking" in data["info"]:
-                    tracker_info = data["info"]
-                    break
+        tracker_info = response.json().get("info")
+        tracking_events = tracker_info.get("tracking", [])
 
-            except (httpx.RequestError, httpx.HTTPStatusError) as e:
-                last_error = e
-                if attempt == MAX_RETRIES - 1:
-                    raise HTTPException(
-                        status_code=503,
-                        detail=f"External service error: {str(e)}"
-                    )
+        # Build state list from latest to oldest, up to 6 entries
+        states = []
+        for i, event in enumerate(reversed(tracking_events[:6])):
+            state_key = f"state_{i + 1}"
+            states.append({
+                "details": STATE_DETAILS.get(state_key),
+                "date": event.get("date")
+            })
 
-            # Exponential backoff before retry
-            await asyncio.sleep(delay)
-            delay *= 2
-        else:
-            raise HTTPException(
-                status_code=504,
-                detail="External service didn't return valid data after retries"
-            )
+        # Pad with None if fewer than 6 states
+        while len(states) < 6:
+            states.append(None)
 
-    # Process tracking events
-    tracking_events = tracker_info.get("tracking", [])[::-1][:6]  # Latest first
-    states = []
+        new_tracker = Tracker(
+            tracking_code=order_no,
+            user_id=user_id,
+            state_1=states[0],
+            state_2=states[1],
+            state_3=states[2],
+            state_4=states[3],
+            state_5=states[4],
+            state_6=states[5],
+        )
 
-    for i, event in enumerate(tracking_events):
-        states.append({
-            "details": STATE_DETAILS.get(f"state_{i + 1}"),
-            "date": event.get("date")
-        })
+        db.add(new_tracker)
+        await db.commit()
 
-    # Pad remaining states
-    states.extend([None] * (6 - len(states)))
+        return {
+            "state_1": new_tracker.state_1,
+            "state_2": new_tracker.state_2,
+            "state_3": new_tracker.state_3,
+            "state_4": new_tracker.state_4,
+            "state_5": new_tracker.state_5,
+            "state_6": new_tracker.state_6,
+        }
 
-    # Create and save new tracker
-    new_tracker = Tracker(
-        tracking_code=order_no,
-        user_id=user_id,
-        **{f"state_{i + 1}": state for i, state in enumerate(states)}
-    )
-
-    db.add(new_tracker)
-    await db.commit()
-    await db.refresh(new_tracker)
-
-    return {f"state_{i}": getattr(new_tracker, f"state_{i}") for i in range(1, 7)}
+    else:
+        return {
+            "state_1": tracker.state_1,
+            "state_2": tracker.state_2,
+            "state_3": tracker.state_3,
+            "state_4": tracker.state_4,
+            "state_5": tracker.state_5,
+            "state_6": tracker.state_6,
+        }

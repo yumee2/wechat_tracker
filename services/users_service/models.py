@@ -16,7 +16,7 @@ class User(Base):
 class Tracker(Base):
     __tablename__ = "trackers"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey('users.telegram_id'), nullable=False, unique=True)
+    user_id = Column(String, ForeignKey('users.telegram_id'), nullable=False)
     tracking_code = Column(String, nullable=False, unique=True)
     state_1 = Column(JSON, nullable=True)
     state_2 = Column(JSON, nullable=True)
