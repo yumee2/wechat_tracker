@@ -53,46 +53,49 @@ async def set_multipliers(multipliers: Multipliers):
 @app.get("/currency", response_model=List[CurrencyRate])
 @cache(expire=60)
 async def get_currency():
-    print("🔄 Выполняется парсинг и возврат данных")
-    cny_rub = await get_cny_price()
-    cny_usd = await get_usd_price()
-
-    raw = await redis_client.hgetall("exchange-multipliers")
-    if not raw:
-        raise HTTPException(status_code=500, detail="Коэффициенты не заданы")
-
     try:
-        # Получаем проценты напрямую
-        percent_data: Dict[str, Dict[str, float]] = {}
-        for key_bytes, json_bytes in raw.items():
-            key = key_bytes.decode("utf-8")
-            percent_data[key] = json.loads(json_bytes)
+        print("🔄 Выполняется парсинг и возврат данных")
+        cny_rub = await get_cny_price()
+        cny_usd = await get_usd_price()
 
-        # Конвертируем проценты в множители для расчетов
-        def to_multiplier(percent):
-            return 1 + (percent / 100)
+        raw = await redis_client.hgetall("exchange-multipliers")
+        if not raw:
+            raise HTTPException(status_code=500, detail="Коэффициенты не заданы")
 
-        return [
-            CurrencyRate(
-                pair="CNY/RUB",
-                rate=cny_rub * to_multiplier(percent_data["CNY/RUB"]["Card"]),
-                type="Card"
-            ),
-            CurrencyRate(
-                pair="CNY/RUB",
-                rate=cny_rub * to_multiplier(percent_data["CNY/RUB"]["Cash"]),
-                type="Cash"
-            ),
-            CurrencyRate(
-                pair="CNY/USD",
-                rate=cny_usd * to_multiplier(percent_data["CNY/USD"]["Card"]),
-                type="Card"
-            ),
-            CurrencyRate(
-                pair="CNY/USD",
-                rate=cny_usd * to_multiplier(percent_data["CNY/USD"]["Cash"]),
-                type="Cash"
-            ),
-        ]
-    except (KeyError, json.JSONDecodeError) as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка в структуре коэффициентов: {e}")
+        try:
+            # Получаем проценты напрямую
+            percent_data: Dict[str, Dict[str, float]] = {}
+            for key_bytes, json_bytes in raw.items():
+                key = key_bytes.decode("utf-8")
+                percent_data[key] = json.loads(json_bytes)
+
+            # Конвертируем проценты в множители для расчетов
+            def to_multiplier(percent):
+                return 1 + (percent / 100)
+
+            return [
+                CurrencyRate(
+                    pair="CNY/RUB",
+                    rate=cny_rub * to_multiplier(percent_data["CNY/RUB"]["Card"]),
+                    type="Card"
+                ),
+                CurrencyRate(
+                    pair="CNY/RUB",
+                    rate=cny_rub * to_multiplier(percent_data["CNY/RUB"]["Cash"]),
+                    type="Cash"
+                ),
+                CurrencyRate(
+                    pair="CNY/USD",
+                    rate=cny_usd * to_multiplier(percent_data["CNY/USD"]["Card"]),
+                    type="Card"
+                ),
+                CurrencyRate(
+                    pair="CNY/USD",
+                    rate=cny_usd * to_multiplier(percent_data["CNY/USD"]["Cash"]),
+                    type="Cash"
+                ),
+            ]
+        except (KeyError, json.JSONDecodeError) as e:
+            raise HTTPException(status_code=500, detail=f"Ошибка в структуре коэффициентов: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Биржа сегодня не работает, попробуйте в другой раз")

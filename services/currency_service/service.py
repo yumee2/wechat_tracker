@@ -9,12 +9,15 @@ async def get_cny_price():
     moex_data = response.json()
     cny_data = moex_data["marketdata"]["data"][0]
 
-    if len(cny_data) > 0:
+    if cny_data[0] is not None:
         cny_price = cny_data[0]
         print(f"CNY/RUB exchange rate: {cny_price}")
         return cny_price
     else:
-        print("No data available for CNY/RUB.")
+        cny_sec_data = moex_data["securities"]["data"][0]
+        cny_price = cny_sec_data[14]
+        print(f"CNY/RUB exchange security rate: {cny_price}")
+        return cny_price
 
 '''Парсинг CNY/USD с сайта Китайского банка (Bank of China)'''
 async def get_usd_price() -> float:
