@@ -25,7 +25,7 @@ services:
     networks:
       - my-network
     volumes:
-      - /var/lib/postgresql/data
+      - postgres-data-2:/var/lib/postgresql/data
 
   redis:
     image: redis:7
@@ -129,6 +129,8 @@ networks:
 
 volumes:
   postgres-data:
+    driver: local
+  postgres-data-2:
     driver: local
 
 
